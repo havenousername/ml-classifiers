@@ -6,6 +6,7 @@ from typing import Literal
 from .dataset import Dataset 
 import pandas as pd # type: ignore
 import numpy as np # type: ignore
+from splits import get_dataset_partitions
 
 class TitanicDataset(Dataset):
   """Titanic dataset class"""
@@ -14,13 +15,12 @@ class TitanicDataset(Dataset):
     self.classes = ["died", "survided"]
     self.idx_classes = [0, 1]
     self.split_by = split_by
-    self.features, self.labels, self.feature_names = self._make_dataset(path, mode)
+    self.features, self.labels, self.feature_names, self.ids = self._make_dataset(path, mode)
   
   def split_dataset(self, df):
     if self.split_by[0] == 1:
       return df, [], []
-    return np.split(df.sample(frac=1, random_state=0), 
-                                [int(self.split_by[0] * len(df)), int((self.split_by[0] + self.split_by[1]) * len(df))])
+    return get_dataset_partitions(df, self.split_by[0],self.split_by[1], self.split_by[2], 0)
 
   def _make_dataset(self, path: str, mode: Literal['train', 'val', 'test']):
     dataset = pd.read_csv(path)
@@ -44,12 +44,16 @@ class TitanicDataset(Dataset):
     # data matrix of the features
     # N(features)xM(feature_entries)
     data = []
+    ids = []
 
     for feature in feature_names:
       if feature == 'Survived':
         for label in df[feature].tolist():
           labels.append(label)
-      elif feature == 'PassengerId' or feature == 'Name':
+      elif feature == 'PassengerId':
+        for id in df[feature].tolist():
+            ids.append(id)
+      elif feature == 'Name':
         continue
       elif feature == 'Ticket' or feature == 'Cabin':
         continue 
@@ -60,7 +64,7 @@ class TitanicDataset(Dataset):
         # data.append((feature, [2 if x == 'C' else 1 if x == 'Q' else 0 for x in df[feature].tolist()]))
       else:
         data.append((feature, df[feature].tolist()))
-    return  [x[1] for x in data], labels, [x[0] for x in data]
+    return  [x[1] for x in data], labels, [x[0] for x in data], ids
 
   def __getitem__(self, index):
     """

@@ -1,10 +1,7 @@
-import dis
 from typing import Literal
 from typing import Type
-import numpy as np
 import math
-
-from sympy import li
+import sys 
 from data.dataloader import DataLoader
 
 """
@@ -21,6 +18,13 @@ class KNNClassifier:
     for index in range(len(p)):
       sum += (p[index] - q[index])**2
     return math.sqrt(sum)
+  
+  @staticmethod
+  def l1(p: list, q: list):
+    sum = 0
+    for index in range(len(p)):
+      sum += abs((p[index] - q[index]))
+    return sum
     
 
   def __init__(self, K: int, distance_type: Literal['eucledean'], x_train: list | Type[DataLoader] , x_data: list | Type[DataLoader], labels: list | None, classes = [0, 1]) -> None:
@@ -28,6 +32,8 @@ class KNNClassifier:
     
     if (distance_type == 'eucledean'):
       self.distance = KNNClassifier.eucledean
+    elif (distance_type == 'l1' or distance_type == 'manhattan'):
+      self.distance = KNNClassifier.l1
     else:
       raise ValueError(f"{distance_type} is not yet supported. Try eucleadean distance instead") 
     
@@ -92,3 +98,27 @@ class KNNClassifier:
   def _Ie(self, b: bool):
     if b: return 1
     else: return 0
+
+
+"""
+K-NN with weights algorithm
+Descendant from KNN class
+"""
+class KNNWeightedClassifier(KNNClassifier):
+  def __init__(self, K: int, distance_type: Literal['eucledean'], x_train: list | type[DataLoader], x_data: list | type[DataLoader], labels: list | None, classes=[0,1]) -> None:
+    super().__init__(K, distance_type, x_train, x_data, labels, classes)
+
+  
+  def _label_probability(self, label: int, x: list):
+    # distance of current x to the other points 
+    distances = [(self.distance(data_point, x), self.labels[index]) 
+                 for index, data_point in enumerate(self.x_train)]
+  
+    distances = sorted(distances, key= lambda x: x[0])[:self.K]
+    z = 0
+    total = 0
+    for y in distances:
+      distance = sys.maxsize if y[0] == 0 else 1/y[0]
+      z += distance
+      total += distance * self._Ie(y[1] == label) 
+    return (1/z) * total 

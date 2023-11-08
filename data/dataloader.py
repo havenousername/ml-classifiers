@@ -19,15 +19,20 @@ class DataLoader:
   batch_size: int = 0
   shuffle: bool = False
   normalization: bool = True
+  maxs: None | list = None
+  mins: None | list = None
 
   def __post_init__(self):
     if self.batch_size == 0:
       self.batch_size = len(self.dataset)
 
+  def fit_normalize(self, maxs, mins):
+    self.maxs
+    self.mins 
   
   def normalize(self):
-    mins = self.dataset[0]["features"]
-    maxs = self.dataset[-1]["features"]
+    mins = self.mins if self.mins is not None else self.dataset[0]["features"]
+    maxs = self.maxs if self.maxs is not None else self.dataset[-1]["features"]
     for data in self.dataset: 
       mins = [data["features"][idx] if data["features"][idx] < x else x  for idx, x in enumerate(mins)]
       maxs = [data["features"][idx] if data["features"][idx] > x else x  for idx, x in enumerate(maxs)]
@@ -35,6 +40,9 @@ class DataLoader:
     # print(maxs, mins)
     # print(self.dataset[0]["features"], maxs, mins)
     dataset = []
+
+    self.maxs = maxs
+    self.mins = mins
 
     def local_log(x):
       if x == 0:
